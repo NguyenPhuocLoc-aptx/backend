@@ -39,17 +39,17 @@ public class AppConfig {
 	private CorsConfigurationSource corsConfigurationSource() {
 		// TODO Auto-generated method stub
 		return new CorsConfigurationSource() {
-			
+
 			@Override
 			public CorsConfiguration getCorsConfiguration(
 					HttpServletRequest request) {
 				// TODO Auto-generated method stub
 				CorsConfiguration cfg = new CorsConfiguration();
-				
+
 				cfg.setAllowedOrigins(Arrays.asList(
 						"http://localhost:3000",
 						"http://localhost:5173",
-						"https://zosh-food.vercel.app"));
+						"https://project-management-react-plum.vercel.app"));
 				cfg.setAllowedMethods(Collections.singletonList("*"));
 				cfg.setAllowCredentials(true);
 				cfg.setAllowedHeaders(Collections.singletonList("*"));

@@ -1,209 +1,168 @@
 package com.zosh.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.zosh.exception.IssueException;
+import com.zosh.enums.Priority;
+import com.zosh.enums.TaskStatus;
+import com.zosh.exception.TaskException;
 import com.zosh.exception.ProjectException;
 import com.zosh.exception.UserException;
-import com.zosh.model.Issue;
 import com.zosh.model.Project;
+import com.zosh.model.Task;
 import com.zosh.model.User;
-import com.zosh.repository.IssueRepository;
+import com.zosh.repository.TaskRepository;
 import com.zosh.request.IssueRequest;
 
 @Service
 public class IssueServiceImpl implements IssueService {
 
-	@Autowired
-	private IssueRepository issueRepository;
-//
-	@Autowired
-	private UserService userService;
-	@Autowired
-	private ProjectService projectService;
-	@Autowired
-	private NotificationServiceImpl notificationServiceImpl;
+	private final TaskRepository taskRepository;
+	private final UserService userService;
+	private final ProjectService projectService;
+	private final NotificationServiceImpl notificationServiceImpl;
 
-//    @Override
-//    public List<Issue> getAllIssues() throws IssueException {
-//        List<Issue> issues = issueRepository.findAll();
-//        if(issues!=null) {
-//        	return issues;
-//        }
-//        throw new IssueException("No issues found");
-//    }
-
-	@Override
-	public Optional<Issue> getIssueById(Long issueId) throws IssueException {
-		Optional<Issue> issue = issueRepository.findById(issueId);
-		if (issue.isPresent()) {
-			return issue;
-		}
-		throw new IssueException("No issues found with issueid" + issueId);
+	@Autowired
+	public IssueServiceImpl(TaskRepository taskRepository, UserService userService,
+							ProjectService projectService, NotificationServiceImpl notificationServiceImpl) {
+		this.taskRepository = taskRepository;
+		this.userService = userService;
+		this.projectService = projectService;
+		this.notificationServiceImpl = notificationServiceImpl;
 	}
 
 	@Override
-	public List<Issue> getIssueByProjectId(Long projectId) throws ProjectException {
+	public Optional<Task> getIssueById(String issueId) throws TaskException {
+		return Optional.of(taskRepository.findById(issueId)
+				.orElseThrow(() -> new TaskException("No task found with id " + issueId)));
+	}
+
+	@Override
+	public List<Task> getIssueByProjectId(String projectId) throws ProjectException {
 		projectService.getProjectById(projectId);
-		return issueRepository.findByProjectId(projectId);
+		return taskRepository.findAllByProjectId(projectId);
 	}
 
 	@Override
-	public Issue createIssue(IssueRequest issueRequest, Long userId)
-			throws UserException, IssueException, ProjectException {
+	public Task createIssue(IssueRequest issueRequest, String userId) throws UserException, TaskException, ProjectException {
 		User user = getUserOrThrow(userId);
-
-		// Check if the project exists
 		Project project = projectService.getProjectById(issueRequest.getProjectId());
-		System.out.println("projid---------->"+issueRequest.getProjectId());
-		if (project == null) {
-			throw new IssueException("Project not found with ID: " + issueRequest.getProjectId());
-		}
 
-		// Create a new issue
-		Issue issue = new Issue();
-		issue.setTitle(issueRequest.getTitle());
-		issue.setDescription(issueRequest.getDescription());
-		issue.setStatus(issueRequest.getStatus());
-		issue.setProjectID(issueRequest.getProjectId());
-		issue.setPriority(issueRequest.getPriority());
-		issue.setDueDate(issueRequest.getDueDate());
+		Task task = Task.builder()
+				.title(issueRequest.getTitle())
+				.description(issueRequest.getDescription())
+				.status(parseStatus(issueRequest.getStatus()))
+				.priority(parsePriority(issueRequest.getPriority()))
+				.dueDate(issueRequest.getDueDate() != null
+						? issueRequest.getDueDate().atStartOfDay() : null)
+				.project(project)
+				.createdBy(user)
+				.build();
 
-
-         
-		// Set the project for the issue
-		issue.setProject(project);
-
-		// Save the issue
-		return issueRepository.save(issue);
+		return taskRepository.save(task);
 	}
 
 	@Override
-	public Optional<Issue> updateIssue(Long issueId, IssueRequest updatedIssue, Long userId)
-			throws IssueException, UserException, ProjectException {
-		User user = getUserOrThrow(userId);
-		Optional<Issue> existingIssue = issueRepository.findById(issueId);
-                           
-		if (existingIssue.isPresent()) {
-			// Check if the project exists
-			Project project = projectService.getProjectById(updatedIssue.getProjectId());
-			if (project == null) {
-				throw new IssueException("Project not found with ID: " + updatedIssue.getProjectId());
-			}
-
-			User assignee = userService.findUserById(updatedIssue.getUserId());
-			if (assignee == null) {
-				throw new UserException("Assignee not found with ID: " + updatedIssue.getUserId());
-			}
-
-			Issue issueToUpdate = existingIssue.get();
-
-
-			if (updatedIssue.getDescription() != null) {
-				issueToUpdate.setDescription(updatedIssue.getDescription());
-			}
-
-			if (updatedIssue.getDueDate() != null) {
-				issueToUpdate.setDueDate(updatedIssue.getDueDate());
-			}
-
-			if (updatedIssue.getPriority() != null) {
-				issueToUpdate.setPriority(updatedIssue.getPriority());
-			}
-
-			if (updatedIssue.getStatus() != null) {
-				issueToUpdate.setStatus(updatedIssue.getStatus());
-			}
-
-			if (updatedIssue.getTitle() != null) {
-				issueToUpdate.setTitle(updatedIssue.getTitle());
-			}
-
-			// Save the updated issue
-			return Optional.of(issueRepository.save(issueToUpdate));
-		}
-
-		throw new IssueException("Issue not found with issueid" + issueId);
-	}
-
-	@Override
-	public String deleteIssue(Long issueId, Long userId) throws UserException, IssueException {
+	public Optional<Task> updateIssue(String issueId, IssueRequest updatedIssue, String userId)
+			throws TaskException, UserException, ProjectException {
 		getUserOrThrow(userId);
-		Optional<Issue> issueById = getIssueById(issueId);
-		if (issueById.isPresent()) {
-			issueRepository.deleteById(issueId);
-			return "issue with the id" + issueId + "deleted";
+		Task task = taskRepository.findById(issueId)
+				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+
+		if (updatedIssue.getTitle() != null)       task.setTitle(updatedIssue.getTitle());
+		if (updatedIssue.getDescription() != null) task.setDescription(updatedIssue.getDescription());
+		if (updatedIssue.getDueDate() != null)     task.setDueDate(updatedIssue.getDueDate().atStartOfDay());
+		if (updatedIssue.getPriority() != null)    task.setPriority(parsePriority(updatedIssue.getPriority()));
+		if (updatedIssue.getStatus() != null)      task.setStatus(parseStatus(updatedIssue.getStatus()));
+
+		if (updatedIssue.getUserId() != null) {
+			User assignee = userService.findUserById(updatedIssue.getUserId());
+			task.setAssignee(assignee);
 		}
-		throw new IssueException("Issue not found with issueid" + issueId);
+
+		return Optional.of(taskRepository.save(task));
 	}
 
 	@Override
-	public List<Issue> getIssuesByAssigneeId(Long assigneeId) throws IssueException {
-		List<Issue> issues = issueRepository.findByAssigneeId(assigneeId);
-		if (issues != null) {
-			return issues;
-		}
-		throw new IssueException("Issues not found");
+	public String deleteIssue(String issueId, String userId) throws UserException, TaskException {
+		getUserOrThrow(userId);
+		taskRepository.findById(issueId)
+				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+		taskRepository.deleteById(issueId);
+		return "Task with id " + issueId + " deleted";
 	}
 
-	private User getUserOrThrow(Long userId) throws UserException {
+	@Override
+	public List<Task> getIssuesByAssigneeId(String assigneeId) throws TaskException {
+		List<Task> tasks = taskRepository.findAllByAssigneeId(assigneeId);
+		if (tasks == null || tasks.isEmpty()) throw new TaskException("No tasks found for assignee " + assigneeId);
+		return tasks;
+	}
+
+	@Override
+	public List<Task> searchIssues(String title, String status, String priority, String assigneeId) throws TaskException {
+		List<Task> all = taskRepository.findAll();
+		return all.stream()
+				.filter(t -> title == null || (t.getTitle() != null && t.getTitle().contains(title)))
+				.filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
+				.filter(t -> priority == null || t.getPriority().name().equalsIgnoreCase(priority))
+				.filter(t -> assigneeId == null || (t.getAssignee() != null && t.getAssignee().getId().equals(assigneeId)))
+				.collect(Collectors.toList());
+	}
+
+	// ✅ FIXED: Now properly fetches the user instead of returning null!
+	@Override
+	public List<User> getAssigneeForIssue(String issueId) throws TaskException {
+		Task task = taskRepository.findById(issueId)
+				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+
+		User assignee = task.getAssignee();
+		if (assignee == null) {
+			return Collections.emptyList();
+		}
+		return List.of(assignee);
+	}
+
+	@Override
+	public Task addUserToIssue(String issueId, String userId) throws UserException, TaskException {
 		User user = userService.findUserById(userId);
+		Task task = taskRepository.findById(issueId)
+				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+		task.setAssignee(user);
+		notificationServiceImpl.sendNotification(user.getEmail(), "New Task Assigned To You", "A new task has been assigned to you.");
+		return taskRepository.save(task);
+	}
 
-		if (user != null) {
-			return user;
-		} else {
-			throw new UserException("User not found with id: " + userId);
+	@Override
+	public Task updateStatus(String issueId, String status) throws TaskException {
+		Task task = taskRepository.findById(issueId)
+				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+		task.setStatus(parseStatus(status));
+		return taskRepository.save(task);
+	}
+
+	private User getUserOrThrow(String userId) throws UserException {
+		return userService.findUserById(userId);
+	}
+
+	private TaskStatus parseStatus(String status) {
+		try {
+			return status != null ? TaskStatus.valueOf(status.toUpperCase()) : TaskStatus.TODO;
+		} catch (IllegalArgumentException e) {
+			return TaskStatus.TODO;
 		}
 	}
 
-	@Override
-	public List<Issue> searchIssues(String title, String status, String priority, Long assigneeId)
-			throws IssueException {
-		List<Issue> searchIssues = issueRepository.searchIssues(title, status, priority, assigneeId);
-		if (searchIssues != null) {
-			return searchIssues;
+	private Priority parsePriority(String priority) {
+		try {
+			return priority != null ? Priority.valueOf(priority.toUpperCase()) : Priority.MEDIUM;
+		} catch (IllegalArgumentException e) {
+			return Priority.MEDIUM;
 		}
-		throw new IssueException("No Issues found");
 	}
-
-	@Override
-	public List<User> getAssigneeForIssue(Long issueId) throws IssueException {
-	return null;
-	}
-
-	@Override
-	public Issue addUserToIssue(Long issueId, Long userId) throws UserException, IssueException {
-		User user = userService.findUserById(userId);
-		Optional<Issue> issue=getIssueById(issueId);
-
-		if(issue.isEmpty())throw new IssueException("issue not exist");
-
-		issue.get().setAssignee(user);
-		notifyAssignee(user.getEmail(),"New Issue Assigned To You","New Issue Assign To You");
-		return issueRepository.save(issue.get());
-
-
-	}
-
-	@Override
-	public Issue updateStatus(Long issueId, String status) throws IssueException {
-		Optional<Issue> optionalIssue=issueRepository.findById(issueId);
-		if(optionalIssue.isEmpty()){
-			throw new IssueException("issue not found");
-		}
-		Issue issue=optionalIssue.get();
-		issue.setStatus(status);
-
-		return issueRepository.save(issue);
-	}
-
-	private void notifyAssignee(String email, String subject, String body) {
-		 System.out.println("IssueServiceImpl.notifyAssignee()");
-	        notificationServiceImpl.sendNotification(email, subject, body);
-	    }
-
 }

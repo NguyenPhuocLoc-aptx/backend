@@ -1,45 +1,86 @@
 package com.zosh.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.zosh.enums.UserRole;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 @Entity
-@Data
+@Table(name = "users", indexes = {
+		@Index(name = "idx_user_email", columnList = "email", unique = true),
+		@Index(name = "idx_user_role",  columnList = "role")
+})
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	private Long id;
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@Column(length = 36)
+	private String id;
 
-	private String fullName;
+	@Column(nullable = false, unique = true)
 	private String email;
+
+	@Column(name = "full_name", nullable = false)
+	private String fullName;
+
+	// Đã đổi tên biến thành password để tự động sinh getPassword()/setPassword()
+	@Column(name = "password_hash", nullable = false)
 	private String password;
 
-	private String role;
-	
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 50)
+	@Builder.Default
+	private UserRole role = UserRole.USER;
+
+	@Column(name = "image_url", length = 500)
+	private String imageUrl;
+
+	@CreationTimestamp
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@UpdateTimestamp
+	@Column(name = "updated_at", nullable = false)
+	private LocalDateTime updatedAt;
+
 	@JsonIgnore
-	@OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL)
-    private List<Issue> assignedIssues = new ArrayList<>();
+	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+	private UserProfile profile;
 
+	@JsonIgnore
+	@OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@Builder.Default
+	private List<Workspace> ownedWorkspaces = new ArrayList<>();
 
-//	@OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-//	private Subscription subscription;
+	@JsonIgnore
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@Builder.Default
+	private List<WorkspaceMember> workspaceMemberships = new ArrayList<>();
 
-	private int projectSize=0;
-	
-//    @JsonIgnore
-//    @ManyToMany(mappedBy = "team")
-//    private List<Project> projects = new ArrayList<>();
-//
+	@JsonIgnore
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@Builder.Default
+	private List<ProjectMember> projectMemberships = new ArrayList<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "assignee", fetch = FetchType.LAZY)
+	@Builder.Default
+	private List<Task> assignedTasks = new ArrayList<>();
+
+	@JsonIgnore
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@Builder.Default
+	private List<Notification> notifications = new ArrayList<>();
 
 }

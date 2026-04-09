@@ -1,3 +1,4 @@
+
 package com.zosh.service;
 
 import com.zosh.exception.MailsException;
@@ -6,9 +7,11 @@ import jakarta.mail.MessagingException;
 
 public interface InvitationService {
 
-	public void sendInvitation(String email, Long projectId) throws MailsException, MessagingException;
+	void sendInvitation(String email, String projectId) throws MailsException, MessagingException; // ✅ Long → String
 
-	public Invitation acceptInvitation(String token, Long userId) throws Exception;
-	public String getTokenByUserMail(String userEmail);
-	public void deleteToken(String token);
+	Invitation acceptInvitation(String token, String userId) throws Exception; // ✅ Long → String
+
+	String getTokenByUserMail(String userEmail);
+
+	void deleteToken(String token);
 }

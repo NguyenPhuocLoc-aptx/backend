@@ -1,6 +1,5 @@
 package com.zosh.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,46 +11,46 @@ import com.zosh.exception.UserException;
 import com.zosh.model.Chat;
 import com.zosh.model.Message;
 import com.zosh.model.User;
-import com.zosh.repository.ChatRepository;
 import com.zosh.repository.MessageRepository;
 import com.zosh.repository.UserRepository;
 
 @Service
 public class MessageServiceImpl implements MessageService {
 
-    @Autowired
-    private MessageRepository messageRepository;
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final ProjectService projectService;
 
     @Autowired
-    private UserRepository userRepository;
-
-  
-    @Autowired
-    private ProjectService projectService;
+    public MessageServiceImpl(MessageRepository messageRepository, UserRepository userRepository,
+                              ProjectService projectService) {
+        this.messageRepository = messageRepository;
+        this.userRepository = userRepository;
+        this.projectService = projectService;
+    }
 
     @Override
-    public Message sendMessage(Long senderId, Long projectId, String content) throws UserException, ChatException, ProjectException {
+    public Message sendMessage(String senderId, String projectId, String content)
+            throws UserException, ChatException, ProjectException {
+
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new UserException("User not found with id: " + senderId));
-     
-        Chat chat = projectService.getProjectById(projectId).getChat();
 
-        Message message = new Message();
-        message.setContent(content);
-        message.setSender(sender);
-        message.setCreatedAt(LocalDateTime.now());
-        message.setChat(chat);
-        Message savedMessage=messageRepository.save(message);
+        Chat chat = projectService.getChatByProjectId(projectId);
+        if (chat == null) throw new ChatException("Chat not found for project " + projectId);
 
-        chat.getMessages().add(savedMessage);
-        return savedMessage;
+        Message message = Message.builder()
+                .content(content)
+                .sender(sender)
+                .chat(chat)
+                .build();
+
+        return messageRepository.save(message);
     }
 
     @Override
-    public List<Message> getMessagesByProjectId(Long projectId) throws ProjectException, ChatException {
-    	Chat chat = projectService.getChatByProjectId(projectId);
-        List<Message> findByChatIdOrderByCreatedAtAsc = messageRepository.findByChatIdOrderByCreatedAtAsc(chat.getId());
-		return findByChatIdOrderByCreatedAtAsc;
+    public List<Message> getMessagesByProjectId(String projectId) throws ProjectException, ChatException {
+        Chat chat = projectService.getChatByProjectId(projectId);
+        return messageRepository.findAllByChatIdAndParentIsNullOrderByCreatedAtAsc(chat.getId());
     }
 }
-

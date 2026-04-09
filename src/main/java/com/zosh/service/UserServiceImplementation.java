@@ -1,8 +1,6 @@
 package com.zosh.service;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Optional;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.zosh.exception.ProjectException;
@@ -21,64 +19,43 @@ import com.zosh.repository.UserRepository;
 
 @Service
 public class UserServiceImplementation implements UserService {
+
 	@Autowired
 	private UserRepository userRepository;
+
 	@Autowired
 	private PasswordResetTokenRepository passwordResetTokenRepository;
+
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
 	@Autowired
 	private JavaMailSender javaMailSender;
-
-//	@Autowired
-//	private ProjectService projectService;
 
 	@Override
 	public User findUserProfileByJwt(String jwt) throws UserException, ProjectException {
 		String email = JwtProvider.getEmailFromJwtToken(jwt);
-
-		User user = userRepository.findByEmail(email);
-
-//		int projectSize=projectService.getProjectsByTeam(user,null,null).size();
-//		user.setProjectSize(projectSize);
-
-		userRepository.save(user);
-
-		if (user == null) {
-			throw new UserException("user not exist with email " + email);
-		}
-		return user;
+		// ✅ Fixed: null check before save; use Optional from findByEmail
+		return userRepository.findByEmail(email)
+				.orElseThrow(() -> new UserException("User not found with email " + email));
 	}
 
 	@Override
 	public User findUserByEmail(String username) throws UserException {
-
-		User user = userRepository.findByEmail(username);
-
-		if (user != null) {
-
-			return user;
-		}
-
-		throw new UserException("user not exist with username " + username);
+		// ✅ Fixed: findByEmail returns Optional<User>
+		return userRepository.findByEmail(username)
+				.orElseThrow(() -> new UserException("User not found with email " + username));
 	}
 
 	@Override
-	public User findUserById(Long userId) throws UserException {
-		Optional<User> opt = userRepository.findById(userId);
-
-		if (opt.isEmpty()) {
-			throw new UserException("user not found with id " + userId);
-		}
-		return opt.get();
+	public User findUserById(String userId) throws UserException {  // ✅ Long → String
+		return userRepository.findById(userId)
+				.orElseThrow(() -> new UserException("User not found with id " + userId));
 	}
 
 	@Override
 	public User updateUsersProjectSize(User user, int number) {
-		user.setProjectSize(user.getProjectSize()+number);
-		if(user.getProjectSize()==-1){
-			return user;
-		}
+		// User model no longer has projectSize — this is a no-op kept for compatibility
 		return userRepository.save(user);
 	}
 
@@ -90,42 +67,27 @@ public class UserServiceImplementation implements UserService {
 
 	@Override
 	public void sendPasswordResetEmail(User user) {
+		String resetToken = UUID.randomUUID().toString();
+		LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(10);
 
-		// Generate a random token (you might want to use a library for this)
-		String resetToken = generateRandomToken();
 
-		// Calculate expiry date
-		Date expiryDate = calculateExpiryDate();
-
-		// Save the token in the database
-		PasswordResetToken passwordResetToken = new PasswordResetToken(resetToken, user, expiryDate);
+		PasswordResetToken passwordResetToken = PasswordResetToken.builder()
+				.token(resetToken)
+				.user(user)
+				.expiresAt(expiresAt)
+				.used(false)
+				.build();
 		passwordResetTokenRepository.save(passwordResetToken);
 
-		// Send an email containing the reset link
 		sendEmail(user.getEmail(), "Password Reset",
-				"Click the following link to reset your password: http://localhost:5454/reset-password?token="
-						+ resetToken);
+				"Click the following link to reset your password: http://localhost:5454/reset-password?token=" + resetToken);
 	}
 
 	private void sendEmail(String to, String subject, String message) {
 		SimpleMailMessage mailMessage = new SimpleMailMessage();
-
 		mailMessage.setTo(to);
 		mailMessage.setSubject(subject);
 		mailMessage.setText(message);
-
 		javaMailSender.send(mailMessage);
 	}
-
-	private String generateRandomToken() {
-		return UUID.randomUUID().toString();
-	}
-
-	private Date calculateExpiryDate() {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(new Date());
-		cal.add(Calendar.MINUTE, 10);
-		return cal.getTime();
-	}
-
 }

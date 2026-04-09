@@ -1,87 +1,72 @@
 package com.zosh.service;
 
-import com.zosh.exception.IssueException;
+import com.zosh.exception.TaskException;
 import com.zosh.exception.UserException;
 import com.zosh.model.Comment;
-import com.zosh.model.Issue;
+import com.zosh.model.Task;
 import com.zosh.model.User;
 import com.zosh.repository.CommentRepository;
-import com.zosh.repository.IssueRepository;
+import com.zosh.repository.TaskRepository;
 import com.zosh.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CommentServiceImpl implements CommentService {
 
-    private CommentRepository commentRepository;
-    private IssueRepository issueRepository;
-    private UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final TaskRepository taskRepository;        // ✅ IssueRepository → TaskRepository
+    private final UserRepository userRepository;
 
     @Autowired
-    public CommentServiceImpl(CommentRepository commentRepository, IssueRepository issueRepository, UserRepository userRepository) {
+    public CommentServiceImpl(CommentRepository commentRepository,
+                              TaskRepository taskRepository,
+                              UserRepository userRepository) {
         this.commentRepository = commentRepository;
-        this.issueRepository = issueRepository;
+        this.taskRepository = taskRepository;
         this.userRepository = userRepository;
     }
 
     @Override
-    public Comment createComment(Long issueId, Long userId, String content) throws UserException, IssueException {
-        Optional<Issue> issueOptional = issueRepository.findById(issueId);
-        Optional<User> userOptional = userRepository.findById(userId);
+    public Comment createComment(String taskId, String userId, String content)  // ✅ Long → String
+            throws UserException, TaskException {
 
-        if (issueOptional.isEmpty()){
-            throw new IssueException("issue not found with id "+issueId);
-        }
-        if(userOptional.isEmpty()){
-            throw new UserException("user not found with id "+userId);
-        }
-            Issue issue = issueOptional.get();
-            User user = userOptional.get();
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskException("Task not found with id " + taskId));
 
-            Comment comment = new Comment();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException("User not found with id " + userId));
 
-            comment.setIssue(issue);
-            comment.setUser(user);
-            comment.setCreatedDateTime(LocalDateTime.now());
-            comment.setContent(content);
+        Comment comment = new Comment();
+        comment.setTask(task);      // ✅ setIssue → setTask
+        comment.setUser(user);
+        comment.setContent(content);
+        // ✅ Removed manual setCreatedDateTime — handled by @CreationTimestamp
 
-            Comment savedComment = commentRepository.save(comment);
-
-            issue.getComments().add(savedComment);
-
-            return savedComment;
+        return commentRepository.save(comment);
     }
 
     @Override
-    public void deleteComment(Long commentId, Long userId) throws UserException, IssueException {
-        Optional<Comment> commentOptional = commentRepository.findById(commentId);
-        Optional<User> userOptional = userRepository.findById(userId);
+    public void deleteComment(String commentId, String userId)  // ✅ Long → String
+            throws UserException, TaskException {
 
-        if (commentOptional.isEmpty()){
-            throw new IssueException("comment not found with id "+commentId);
-        }
-        if(userOptional.isEmpty()){
-            throw new UserException("user not found with id "+userId);
-        }
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new TaskException("Comment not found with id " + commentId));
 
-        Comment comment = commentOptional.get();
-        User user = userOptional.get();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserException("User not found with id " + userId));
 
-        if (comment.getUser().equals(user)) {
-            commentRepository.delete(comment);
-        } else {
+        if (!comment.getUser().getId().equals(user.getId())) {
             throw new UserException("User does not have permission to delete this comment!");
         }
 
+        commentRepository.delete(comment);
     }
 
     @Override
-    public List<Comment> findCommentByIssueId(Long issueId) {
-        return commentRepository.findByIssueId(issueId);
+    public List<Comment> findCommentsByTaskId(String taskId) throws TaskException {  // ✅ renamed method
+        return commentRepository.findAllByTaskIdAndParentIsNullOrderByCreatedAtAsc(taskId);
     }
 }

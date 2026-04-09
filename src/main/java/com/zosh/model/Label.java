@@ -1,45 +1,49 @@
 package com.zosh.model;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 @Entity
-@Data
+@Table(name = "labels",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_label_project_name", columnNames = {"project_id", "name"})
+        },
+        indexes = {
+                @Index(name = "idx_label_project", columnList = "project_id")
+        })
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Label {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36)
+    private String id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = false)
+    private User createdBy;
+
+    @Column(nullable = false, length = 100)
     private String name;
-    
+
+    @Column(nullable = false, length = 7)
     private String color;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    private LocalDateTime creationDate;
-
-    // Assuming you have a User entity for creator association
-    @ManyToOne
-    @JoinColumn(name = "creator_id")
-    private User creator;
-
-    private int usageCount;
-
-    private boolean isVisible;
-
-    // Assuming bidirectional relationship is not required for now
-    // @ManyToMany(mappedBy = "labels")
-    // private Set<Issue> associatedIssues = new HashSet<>();
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

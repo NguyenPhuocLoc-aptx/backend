@@ -6,21 +6,15 @@ import com.zosh.model.User;
 
 public interface UserService {
 
-	public User findUserProfileByJwt(String jwt) throws UserException, ProjectException;
-	
-	public User findUserByEmail(String email) throws UserException;
-	
-	public User findUserById(Long userId) throws UserException;
+	User findUserProfileByJwt(String jwt) throws UserException, ProjectException;
 
-	public User updateUsersProjectSize(User user,int number);
+	User findUserByEmail(String email) throws UserException;
 
-//	public List<User> findAllUsers();
+	User findUserById(String userId) throws UserException;  // ✅ Long → String
 
-//	public List<User> getPenddingRestaurantOwner();
+	User updateUsersProjectSize(User user, int number);
 
 	void updatePassword(User user, String newPassword);
 
 	void sendPasswordResetEmail(User user);
-
-//	void sendPasswordResetEmail(User user);
 }

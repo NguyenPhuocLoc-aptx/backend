@@ -1,11 +1,26 @@
 package com.zosh.repository;
 
+import com.zosh.model.Message;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+// ── Message ────────────────────────────────────────────────────────
+@Repository
+public interface MessageRepository extends JpaRepository<Message, String> {
+    List<Message> findAllByChatIdAndParentIsNullOrderByCreatedAtAsc(String chatId);
+    List<Message> findAllByParentIdOrderByCreatedAtAsc(String parentId);
 
-import com.zosh.model.Message;
-
-public interface MessageRepository extends JpaRepository<Message, Long>{
-	 List<Message> findByChatIdOrderByCreatedAtAsc(Long chatId);
+    @Query("""
+        SELECT m FROM Message m
+        WHERE m.chat.id = :chatId
+        ORDER BY m.createdAt DESC
+        LIMIT :limit
+    """)
+    List<Message> findLatestMessages(@Param("chatId") String chatId,
+                                     @Param("limit")  int limit);
+    long countByChatId(String chatId);
 }

@@ -1,25 +1,33 @@
 package com.zosh.repository;
 
-import java.util.List;
-
+import com.zosh.enums.ProjectStatus;
+import com.zosh.model.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-import com.zosh.model.Project;
-import com.zosh.model.User;
+import java.util.List;
 
-public interface ProjectRepository extends JpaRepository<Project, Long> {
-	 List<Project> findByOwner(User owner);
+// ── Project ────────────────────────────────────────────────────────
+@Repository
+public interface ProjectRepository extends JpaRepository<Project, String> {
+    List<Project> findAllByWorkspaceId(String workspaceId);
+    List<Project> findAllByOwnerId(String ownerId);
+    List<Project> findAllByStatus(ProjectStatus status);
 
+    @Query("""
+        SELECT p FROM Project p
+        JOIN p.members m
+        WHERE m.user.id = :userId
+    """)
+    List<Project> findAllByMemberUserId(@Param("userId") String userId);
 
-
-	List<Project> findByNameContainingAndTeamContains(String partialName, User user);
-	List<Project> findByNameContainingAndTeamContaining(String partialName, User user);
-
-	@Query("SELECT p FROM Project p JOIN p.team t WHERE t = :user")
-	List<Project> findProjectsByTeam(@Param("user") User user);
-
-	List<Project> findByTeamContainingOrOwner(User user,User owner);
-
+    @Query("""
+        SELECT p FROM Project p
+        WHERE p.workspace.id = :workspaceId
+        AND (p.name LIKE %:keyword% OR p.description LIKE %:keyword%)
+    """)
+    List<Project> searchInWorkspace(@Param("workspaceId") String workspaceId,
+                                    @Param("keyword")     String keyword);
 }

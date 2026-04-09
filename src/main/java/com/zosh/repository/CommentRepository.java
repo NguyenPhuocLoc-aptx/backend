@@ -1,13 +1,15 @@
 package com.zosh.repository;
 
+import com.zosh.model.Comment;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.zosh.model.Comment;
-
-public interface CommentRepository extends JpaRepository<Comment, Long> {
-
-	List<Comment> findByIssueId(Long issueId);
+// ── Comment ────────────────────────────────────────────────────────
+@Repository
+public interface CommentRepository extends JpaRepository<Comment, String> {
+    List<Comment> findAllByTaskIdAndParentIsNullOrderByCreatedAtAsc(String taskId);
+    List<Comment> findAllByParentIdOrderByCreatedAtAsc(String parentId);
+    long countByTaskId(String taskId);
 }
-

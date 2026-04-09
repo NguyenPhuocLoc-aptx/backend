@@ -1,17 +1,22 @@
 package com.zosh.repository;
 
+import com.zosh.model.Chat;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+// ── Chat ───────────────────────────────────────────────────────────
+@Repository
+public interface ChatRepository extends JpaRepository<Chat, String> {
+    List<Chat> findAllByProjectId(String projectId);
 
-import com.zosh.model.Chat;
-import com.zosh.model.Project;
-
-public interface ChatRepository extends JpaRepository<Chat, Long> {
-    
-
-	Chat findByProject(Project projectById);
-	
-//	List<Chat> findByProjectNameContainingIgnoreCase(String projectName);
+    @Query("""
+        SELECT c FROM Chat c
+        JOIN c.members m
+        WHERE m.user.id = :userId
+    """)
+    List<Chat> findAllByMemberUserId(@Param("userId") String userId);
 }
-

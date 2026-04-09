@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class TokenValidationRequest {
     private String token;
     private String userEmail;
-    private Long projectId;
+    private String projectId;
 
    
 }

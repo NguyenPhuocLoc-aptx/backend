@@ -3,34 +3,35 @@ package com.zosh.service;
 import java.util.List;
 import java.util.Optional;
 
-import com.zosh.exception.IssueException;
+import com.zosh.exception.TaskException;
 import com.zosh.exception.ProjectException;
 import com.zosh.exception.UserException;
-import com.zosh.model.Issue;
+import com.zosh.model.Task;
 import com.zosh.model.User;
 import com.zosh.request.IssueRequest;
 
 public interface IssueService {
-//	 List<Issue> getAllIssues() throws IssueException;
 
-	    Optional<Issue> getIssueById(Long issueId) throws IssueException;
+	Optional<Task> getIssueById(String issueId) throws TaskException;           // ✅ Long → String, Issue → Task
 
-	List<Issue> getIssueByProjectId(Long projectId) throws ProjectException;
+	List<Task> getIssueByProjectId(String projectId) throws ProjectException;   // ✅
 
-	    Issue createIssue(IssueRequest issue,Long userid) throws UserException, IssueException, ProjectException;
+	Task createIssue(IssueRequest issue, String userId)                         // ✅
+			throws UserException, TaskException, ProjectException;
 
-	    Optional<Issue> updateIssue(Long issueid,IssueRequest updatedIssue,Long userid ) throws IssueException, UserException, ProjectException;
+	Optional<Task> updateIssue(String issueId, IssueRequest updatedIssue, String userId) // ✅
+			throws TaskException, UserException, ProjectException;
 
-	    String deleteIssue(Long issueId,Long userid) throws UserException, IssueException;
+	String deleteIssue(String issueId, String userId) throws UserException, TaskException; // ✅
 
-	    List<Issue> getIssuesByAssigneeId(Long assigneeId) throws IssueException;
-	    
-	    List<Issue> searchIssues(String title, String status, String priority, Long assigneeId) throws IssueException;
-	    
-	    List<User> getAssigneeForIssue(Long issueId) throws IssueException;
+	List<Task> getIssuesByAssigneeId(String assigneeId) throws TaskException;   // ✅
 
-	    Issue addUserToIssue(Long issueId, Long userId) throws UserException, IssueException;
+	List<Task> searchIssues(String title, String status, String priority, String assigneeId) // ✅
+			throws TaskException;
 
-		Issue updateStatus(Long issueId, String status) throws IssueException;
+	List<User> getAssigneeForIssue(String issueId) throws TaskException;        // ✅
 
+	Task addUserToIssue(String issueId, String userId) throws UserException, TaskException; // ✅
+
+	Task updateStatus(String issueId, String status) throws TaskException;      // ✅
 }

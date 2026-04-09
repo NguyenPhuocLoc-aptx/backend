@@ -10,27 +10,32 @@ import com.zosh.model.Project;
 import com.zosh.model.User;
 
 public interface ProjectService {
-	Project createProject(Project project, Long userId) throws UserException;
 
-//	List<Project> getProjectsByOwner(User owner) throws ProjectException;
+	// Changed Long to String
+	Project createProject(Project project, String userId) throws UserException;
+
+//  List<Project> getProjectsByOwner(User owner) throws ProjectException;
 
 	List<Project> getProjectsByTeam(User user,String category,String tag) throws ProjectException;
 
+	// Changed Long to String
+	Project getProjectById(String projectId) throws ProjectException;
 
-	Project getProjectById(Long projectId) throws ProjectException;
+	// Changed Longs to Strings
+	String deleteProject(String projectId, String userId) throws UserException;
 
-	String deleteProject(Long projectId,Long userId) throws UserException;
+	// Changed Long to String
+	Project updateProject(Project updatedProject, String id) throws ProjectException;
 
-	Project updateProject(Project updatedProject, Long id) throws ProjectException;
-	
 	List<Project> searchProjects(String keyword, User user) throws ProjectException;
 
-	void addUserToProject(Long projectId, Long userId) throws UserException, ProjectException;
+	// Changed Longs to Strings
+	void addUserToProject(String projectId, String userId) throws UserException, ProjectException;
 
-	void removeUserFromProject(Long projectId, Long userId) throws UserException, ProjectException;
+	// Changed Longs to Strings
+	void removeUserFromProject(String projectId, String userId) throws UserException, ProjectException;
 
-	Chat getChatByProjectId(Long projectId) throws ProjectException, ChatException;
+	// Changed Long to String
+	Chat getChatByProjectId(String projectId) throws ProjectException, ChatException;
 
-
-	
 }
