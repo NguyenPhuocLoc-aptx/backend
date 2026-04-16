@@ -1,6 +1,4 @@
-package com.npl.request;
-
-import java.util.List;
+package com.npl.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,9 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateChat {
+public class MessageResponse {
+	private String message;
 
-	private Long projectId;
-	
-	private List<Long> userIds;
 }

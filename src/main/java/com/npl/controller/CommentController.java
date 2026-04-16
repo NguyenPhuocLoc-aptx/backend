@@ -5,8 +5,8 @@ import com.npl.exception.TaskException; // Đã đổi từ IssueException sang 
 import com.npl.exception.UserException;
 import com.npl.model.Comment;
 import com.npl.model.User;
-import com.npl.request.CreateCommentRequest;
-import com.npl.response.MessageResponse;
+import com.npl.dto.request.CreateCommentRequest;
+import com.npl.dto.response.MessageResponse;
 import com.npl.service.CommentService;
 import com.npl.service.UserService;
 

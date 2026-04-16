@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.npl.response.ApiResponse;
+import com.npl.dto.response.ApiResponse;
 
 @RestController
 public class HomeController {

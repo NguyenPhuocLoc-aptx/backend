@@ -1,4 +1,4 @@
-package com.npl.config;
+package com.npl.security;
 
 import java.util.Collection;
 import java.util.Date;

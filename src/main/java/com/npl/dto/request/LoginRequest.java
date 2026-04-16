@@ -1,4 +1,4 @@
-package com.npl.request;
+package com.npl.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

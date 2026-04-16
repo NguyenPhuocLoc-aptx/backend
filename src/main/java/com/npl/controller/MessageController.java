@@ -10,7 +10,7 @@ import com.npl.exception.ChatException;
 import com.npl.exception.ProjectException;
 import com.npl.exception.UserException;
 import com.npl.model.Message;
-import com.npl.request.CreateMessageRequest;
+import com.npl.dto.request.CreateMessageRequest;
 import com.npl.service.MessageService;
 
 @RestController

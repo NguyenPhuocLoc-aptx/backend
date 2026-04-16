@@ -1,4 +1,4 @@
-package com.npl.DTO;
+package com.npl.dto;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

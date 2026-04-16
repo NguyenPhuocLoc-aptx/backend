@@ -9,7 +9,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.npl.config.JwtProvider;
+import com.npl.security.JwtProvider;
 import com.npl.exception.UserException;
 import com.npl.model.PasswordResetToken;
 import com.npl.model.User;

@@ -14,11 +14,11 @@ import com.npl.model.User;
 import com.npl.repository.UserRepository;
 
 @Service
-public class CustomeUserServiceImplementation implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
 
 	private final UserRepository userRepository;
 
-	public CustomeUserServiceImplementation(UserRepository userRepository) {
+	public CustomUserDetailsService(UserRepository userRepository) {
 		this.userRepository = userRepository;
 	}
 

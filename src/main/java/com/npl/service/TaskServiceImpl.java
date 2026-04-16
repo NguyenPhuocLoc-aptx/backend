@@ -17,7 +17,7 @@ import com.npl.model.Project;
 import com.npl.model.Task;
 import com.npl.model.User;
 import com.npl.repository.TaskRepository;
-import com.npl.request.IssueRequest;
+import com.npl.dto.request.IssueRequest;
 
 @Service
 public class TaskServiceImpl implements TaskService {

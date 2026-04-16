@@ -8,7 +8,7 @@ import com.npl.exception.ProjectException;
 import com.npl.exception.UserException;
 import com.npl.model.Task;
 import com.npl.model.User;
-import com.npl.request.IssueRequest;
+import com.npl.dto.request.IssueRequest;
 
 public interface TaskService {
 

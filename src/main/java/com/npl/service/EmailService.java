@@ -1,12 +1,11 @@
 package com.npl.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import com.npl.exception.MailsException;
+import com.npl.exception.MailException;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -18,7 +17,7 @@ public class EmailService {
     private JavaMailSender javaMailSender;
 
 
-    public void sendEmailWithToken(String userEmail, String link) throws MessagingException, MailsException {
+    public void sendEmailWithToken(String userEmail, String link) throws MessagingException, MailException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
         
@@ -32,8 +31,8 @@ public class EmailService {
 
         try {
             javaMailSender.send(mimeMessage);
-        } catch (MailException e) {
-            throw new MailsException("Failed to send email");
+        } catch (org.springframework.mail.MailException e) {
+            throw new MailException("Failed to send email");
         }
     }
 }

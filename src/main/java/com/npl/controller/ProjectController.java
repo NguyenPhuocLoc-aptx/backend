@@ -2,10 +2,11 @@ package com.npl.controller;
 
 import java.util.List;
 
+import com.npl.dto.request.InvitationRequest;
 import com.npl.model.Invitation;
 import com.npl.model.Workspace;
-import com.npl.request.ProjectCreateRequest;
-import com.npl.request.ProjectInvitationRequest;
+import com.npl.dto.request.ProjectCreateRequest;
+import com.npl.dto.request.ProjectInvitationRequest;
 import com.npl.service.InvitationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ import com.npl.exception.UserException;
 import com.npl.model.Chat;
 import com.npl.model.Project;
 import com.npl.model.User;
-import com.npl.response.MessageResponse;
+import com.npl.dto.response.MessageResponse;
 import com.npl.service.ProjectService;
 import com.npl.service.UserService;
 
@@ -138,7 +139,7 @@ public class ProjectController {
 
         User user = userService.findUserProfileByJwt(jwt);
 
-        com.npl.request.InvitationRequest invReq = new com.npl.request.InvitationRequest();
+        InvitationRequest invReq = new InvitationRequest();
         invReq.setEmail(req.getEmail());
         invReq.setProjectId(req.getProjectId());
 

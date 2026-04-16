@@ -1,6 +1,6 @@
 package com.npl.service;
 
-import com.npl.response.NotificationResponse;
+import com.npl.dto.response.NotificationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,15 +1,15 @@
 package com.npl.controller;
 
-import com.npl.config.JwtProvider;
+import com.npl.security.JwtProvider;
 import com.npl.exception.UserException;
 import com.npl.model.PasswordResetToken;
 import com.npl.model.User;
 import com.npl.repository.UserRepository;
-import com.npl.request.LoginRequest;
-import com.npl.request.ResetPasswordRequest;
-import com.npl.response.ApiResponse;
-import com.npl.response.AuthResponse;
-import com.npl.service.CustomeUserServiceImplementation;
+import com.npl.dto.request.LoginRequest;
+import com.npl.dto.request.ResetPasswordRequest;
+import com.npl.dto.response.ApiResponse;
+import com.npl.dto.response.AuthResponse;
+import com.npl.service.CustomUserDetailsService;
 import com.npl.service.PasswordResetTokenService;
 import com.npl.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +30,7 @@ public class AuthController {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
-	private final CustomeUserServiceImplementation customUserDetails;
+	private final CustomUserDetailsService customUserDetails;
 
 	// Injected JwtProvider to fix the non-static method error
 	private final JwtProvider jwtProvider;
