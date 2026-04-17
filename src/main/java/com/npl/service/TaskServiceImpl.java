@@ -17,7 +17,7 @@ import com.npl.model.Project;
 import com.npl.model.Task;
 import com.npl.model.User;
 import com.npl.repository.TaskRepository;
-import com.npl.dto.request.IssueRequest;
+import com.npl.dto.request.CreateTaskRequest;
 
 @Service
 public class TaskServiceImpl implements TaskService {
@@ -25,7 +25,6 @@ public class TaskServiceImpl implements TaskService {
 	private final TaskRepository taskRepository;
 	private final UserService userService;
 	private final ProjectService projectService;
-	// FIXED: Inject the interface, not the Implementation class
 	private final NotificationService notificationService;
 
 	@Autowired
@@ -50,8 +49,7 @@ public class TaskServiceImpl implements TaskService {
 	}
 
 	@Override
-	// FIXED: Removed 'TaskException' as it is never thrown here
-	public Task createIssue(IssueRequest issueRequest, String userId) throws UserException, ProjectException {
+	public Task createIssue(CreateTaskRequest issueRequest, String userId) throws UserException, ProjectException {
 		User user = getUserOrThrow(userId);
 		Project project = projectService.getProjectById(issueRequest.getProjectId());
 
@@ -60,8 +58,7 @@ public class TaskServiceImpl implements TaskService {
 				.description(issueRequest.getDescription())
 				.status(parseStatus(issueRequest.getStatus()))
 				.priority(parsePriority(issueRequest.getPriority()))
-				.dueDate(issueRequest.getDueDate() != null
-						? issueRequest.getDueDate().atStartOfDay() : null)
+				.dueDate(issueRequest.getDueDate() != null ? issueRequest.getDueDate() : null)
 				.project(project)
 				.createdBy(user)
 				.build();
@@ -70,8 +67,7 @@ public class TaskServiceImpl implements TaskService {
 	}
 
 	@Override
-	// FIXED: Removed 'ProjectException' as it is never thrown here
-	public Optional<Task> updateIssue(String issueId, IssueRequest updatedIssue, String userId)
+	public Optional<Task> updateIssue(String issueId, CreateTaskRequest updatedIssue, String userId)
 			throws TaskException, UserException {
 		getUserOrThrow(userId);
 		Task task = taskRepository.findById(issueId)
@@ -79,12 +75,13 @@ public class TaskServiceImpl implements TaskService {
 
 		if (updatedIssue.getTitle() != null)       task.setTitle(updatedIssue.getTitle());
 		if (updatedIssue.getDescription() != null) task.setDescription(updatedIssue.getDescription());
-		if (updatedIssue.getDueDate() != null)     task.setDueDate(updatedIssue.getDueDate().atStartOfDay());
+		if (updatedIssue.getDueDate() != null)     task.setDueDate(updatedIssue.getDueDate());
 		if (updatedIssue.getPriority() != null)    task.setPriority(parsePriority(updatedIssue.getPriority()));
 		if (updatedIssue.getStatus() != null)      task.setStatus(parseStatus(updatedIssue.getStatus()));
 
-		if (updatedIssue.getUserId() != null) {
-			User assignee = userService.findUserById(updatedIssue.getUserId());
+		// FIXED: Changed getUserId() to getAssigneeId() to match your DTO
+		if (updatedIssue.getAssigneeId() != null) {
+			User assignee = userService.findUserById(updatedIssue.getAssigneeId());
 			task.setAssignee(assignee);
 		}
 
@@ -108,7 +105,6 @@ public class TaskServiceImpl implements TaskService {
 	}
 
 	@Override
-	// FIXED: Removed 'TaskException' as it is never thrown here
 	public List<Task> searchIssues(String title, String status, String priority, String assigneeId) {
 		List<Task> all = taskRepository.findAll();
 		return all.stream()
@@ -138,8 +134,8 @@ public class TaskServiceImpl implements TaskService {
 				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
 		task.setAssignee(user);
 
-		// FIXED: Update this to match your NotificationService structure and database schema.
-		// Example of what it should look like:
+		// TODO: When you are ready to send notifications, you will need to add a "createNotification" method
+		// to your NotificationService and uncomment this.
 		// notificationService.createNotification(user.getId(), "TASK", task.getId(), "TASK_ASSIGNED", "A new task has been assigned to you.");
 
 		return taskRepository.save(task);

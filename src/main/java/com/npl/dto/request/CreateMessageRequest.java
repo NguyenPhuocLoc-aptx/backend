@@ -8,8 +8,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateMessageRequest {
-
-	private String senderId;
-	private String projectId;
+	private String chatId;
 	private String content;
+	private String parentId;
+	private String attachmentUrl;
+
 }

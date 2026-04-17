@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateChatRequest {
-
-	private Long projectId;
-	
-	private List<Long> userIds;
+	private String projectId; // Fixed from Long
+	private List<String> userIds; // Fixed from List<Long>
+	private String chatName; // Added to support your DB schema
 }

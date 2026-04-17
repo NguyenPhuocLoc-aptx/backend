@@ -8,7 +8,7 @@ import com.npl.exception.ProjectException;
 import com.npl.exception.UserException;
 import com.npl.model.Task;
 import com.npl.model.User;
-import com.npl.dto.request.IssueRequest;
+import com.npl.dto.request.CreateTaskRequest;
 
 public interface TaskService {
 
@@ -16,10 +16,10 @@ public interface TaskService {
 
 	List<Task> getIssueByProjectId(String projectId) throws ProjectException;   // ✅
 
-	Task createIssue(IssueRequest issue, String userId)                         // ✅
+	Task createIssue(CreateTaskRequest issue, String userId)                         // ✅
 			throws UserException, TaskException, ProjectException;
 
-	Optional<Task> updateIssue(String issueId, IssueRequest updatedIssue, String userId) // ✅
+	Optional<Task> updateIssue(String issueId, CreateTaskRequest updatedIssue, String userId) // ✅
 			throws TaskException, UserException, ProjectException;
 
 	String deleteIssue(String issueId, String userId) throws UserException, TaskException; // ✅
