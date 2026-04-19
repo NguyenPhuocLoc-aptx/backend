@@ -37,11 +37,11 @@ public class AppConfig {
 				.authorizeHttpRequests(auth -> auth
 						// Public endpoints — auth routes must be open!
 						.requestMatchers(
+								"/auth/**",
 								"/api/auth/**",
 								"/api/invitations/accept/**",
-								"/ws/**"          // WebSocket handshake
+								"/ws/**"
 						).permitAll()
-						// Admin only
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						// Everything else requires authentication
 						.anyRequest().authenticated()
@@ -58,6 +58,7 @@ public class AppConfig {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(Arrays.asList(
 				"http://localhost:3000",
+				"http://localhost:5173",
 				"http://localhost:5174",
 				"https://project-management-react-plum.vercel.app"
 		));
