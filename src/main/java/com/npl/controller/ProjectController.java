@@ -19,7 +19,8 @@ import com.npl.exception.UserException;
 import com.npl.model.Chat;
 import com.npl.model.Project;
 import com.npl.model.User;
-import com.npl.dto.response.MessageResponse;
+// FIXED: Imported ApiResponse instead of MessageResponse
+import com.npl.dto.response.ApiResponse;
 import com.npl.service.ProjectService;
 import com.npl.service.UserService;
 
@@ -99,13 +100,17 @@ public class ProjectController {
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
+    // FIXED: Changed return type to ApiResponse
     @DeleteMapping("/{projectId}")
-    public ResponseEntity<MessageResponse> deleteProject(
+    public ResponseEntity<ApiResponse> deleteProject(
             @PathVariable String projectId,
             @RequestHeader("Authorization") String token) throws UserException, ProjectException {
         User user = userService.findUserProfileByJwt(token);
-        MessageResponse response = new MessageResponse(projectService.deleteProject(projectId, user.getId()));
+
+        // FIXED: Using ApiResponse (message, status)
+        ApiResponse response = new ApiResponse(projectService.deleteProject(projectId, user.getId()), true);
         userService.updateUsersProjectSize(user, -1);
+
         return ResponseEntity.ok(response);
     }
 
@@ -117,12 +122,15 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.searchProjects(keyword, user));
     }
 
+    // FIXED: Changed return type to ApiResponse
     @PostMapping("/{userId}/add-to-project/{projectId}")
-    public ResponseEntity<MessageResponse> addUserToProject(
+    public ResponseEntity<ApiResponse> addUserToProject(
             @PathVariable String userId,
             @PathVariable String projectId) throws UserException, ProjectException {
         projectService.addUserToProject(projectId, userId);
-        return ResponseEntity.ok(new MessageResponse("User added to the project successfully"));
+
+        // FIXED: Using ApiResponse
+        return ResponseEntity.ok(new ApiResponse("User added to the project successfully", true));
     }
 
     @GetMapping("/{projectId}/chat")
@@ -132,8 +140,9 @@ public class ProjectController {
         return chat != null ? ResponseEntity.ok(chat) : ResponseEntity.notFound().build();
     }
 
+    // FIXED: Changed return type to ApiResponse
     @PostMapping("/invite")
-    public ResponseEntity<MessageResponse> inviteToProject(
+    public ResponseEntity<ApiResponse> inviteToProject(
             @RequestBody ProjectInvitationRequest req,
             @RequestHeader("Authorization") String jwt) throws Exception {
 
@@ -145,8 +154,10 @@ public class ProjectController {
 
         invitationService.sendInvitation(invReq, user.getEmail());
 
-        MessageResponse res = new MessageResponse();
+        // FIXED: Using ApiResponse
+        ApiResponse res = new ApiResponse();
         res.setMessage("User invited to the project successfully");
+        res.setStatus(true);
         return ResponseEntity.ok(res);
     }
 

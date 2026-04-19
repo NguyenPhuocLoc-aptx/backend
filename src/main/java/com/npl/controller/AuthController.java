@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}, allowCredentials = "true")
 public class AuthController {
 
 	private final UserRepository userRepository;
@@ -105,9 +106,6 @@ public class AuthController {
 		return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 	}
 
-	// =================================================================================
-	// PASSWORD RESET LOGIC
-	// =================================================================================
 
 	@PostMapping("/reset-password/request")
 	public ResponseEntity<ApiResponse> requestPasswordReset(@RequestParam("email") String email) throws UserException {

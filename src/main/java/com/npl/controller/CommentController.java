@@ -1,12 +1,13 @@
 package com.npl.controller;
 
 import com.npl.exception.ProjectException;
-import com.npl.exception.TaskException; // Đã đổi từ IssueException sang TaskException
+import com.npl.exception.TaskException;
 import com.npl.exception.UserException;
 import com.npl.model.Comment;
 import com.npl.model.User;
 import com.npl.dto.request.CreateCommentRequest;
-import com.npl.dto.response.MessageResponse;
+// FIXED: Imported ApiResponse instead of MessageResponse
+import com.npl.dto.response.ApiResponse;
 import com.npl.service.CommentService;
 import com.npl.service.UserService;
 
@@ -36,16 +37,17 @@ public class CommentController {
         return new ResponseEntity<>(createdComment, HttpStatus.CREATED);
     }
 
+    // FIXED: Changed return type to ApiResponse
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<MessageResponse> deleteComment(
+    public ResponseEntity<ApiResponse> deleteComment(
             @PathVariable String commentId,
             @RequestHeader("Authorization") String jwt) throws UserException, TaskException, ProjectException {
 
         User user = userService.findUserProfileByJwt(jwt);
         commentService.deleteComment(commentId, user.getId());
 
-        MessageResponse res = new MessageResponse();
-        res.setMessage("Comment deleted successfully");
+        // FIXED: Using ApiResponse with the message and a boolean status
+        ApiResponse res = new ApiResponse("Comment deleted successfully", true);
 
         return new ResponseEntity<>(res, HttpStatus.OK);
     }

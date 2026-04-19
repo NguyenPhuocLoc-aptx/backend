@@ -20,7 +20,7 @@ import com.npl.security.JwtTokenValidator;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Allows @PreAuthorize on controllers
+@EnableMethodSecurity
 public class AppConfig {
 
 	private final JwtTokenValidator jwtTokenValidator;
@@ -58,7 +58,7 @@ public class AppConfig {
 		CorsConfiguration config = new CorsConfiguration();
 		config.setAllowedOrigins(Arrays.asList(
 				"http://localhost:3000",
-				"http://localhost:5173",
+				"http://localhost:5174",
 				"https://project-management-react-plum.vercel.app"
 		));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

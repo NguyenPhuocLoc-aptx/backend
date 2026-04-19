@@ -2,7 +2,6 @@ package com.npl.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,29 +9,43 @@ import com.npl.exception.ChatException;
 import com.npl.exception.ProjectException;
 import com.npl.exception.UserException;
 import com.npl.model.Message;
+import com.npl.model.User;
 import com.npl.dto.request.CreateMessageRequest;
 import com.npl.service.MessageService;
+import com.npl.service.UserService;
+
+import lombok.RequiredArgsConstructor; // ADDED THIS
 
 @RestController
 @RequestMapping("/api/messages")
+@RequiredArgsConstructor // FIXED: This replaces @Autowired and handles constructor injection automatically!
 public class MessageController {
 
-    @Autowired
-    private MessageService messageService;
+    // FIXED: Made these 'private final' so @RequiredArgsConstructor can inject them
+    private final MessageService messageService;
+    private final UserService userService;
 
     @PostMapping("/send")
-    public ResponseEntity<Message> sendMessage(@RequestBody CreateMessageRequest request)
-            throws UserException, ChatException, ProjectException {
-        // ✅ senderId and projectId are now String
+    public ResponseEntity<Message> sendMessage(
+            @RequestBody CreateMessageRequest request,
+            @RequestHeader("Authorization") String jwt) throws UserException, ChatException, ProjectException {
+
+        // Securely extract the sender from the JWT token
+        User user = userService.findUserProfileByJwt(jwt);
+
+        // FIXED: Changed request.getProjectId() to request.getChatId()
+        // Note: Even though your MessageService interface named the parameter 'projectId',
+        // we can safely pass the 'chatId' from your request into that slot!
         Message sentMessage = messageService.sendMessage(
-                request.getSenderId(), request.getProjectId(), request.getContent());
+                user.getId(), request.getChatId(), request.getContent());
+
         return ResponseEntity.ok(sentMessage);
     }
 
     @GetMapping("/chat/{projectId}")
-    public ResponseEntity<List<Message>> getMessagesByChatId(
-            @PathVariable String projectId)             // ✅ Long → String
-            throws ProjectException, ChatException {
+    public ResponseEntity<List<Message>> getMessagesByProjectId(
+            @PathVariable String projectId) throws ProjectException, ChatException {
+
         return ResponseEntity.ok(messageService.getMessagesByProjectId(projectId));
     }
 }
