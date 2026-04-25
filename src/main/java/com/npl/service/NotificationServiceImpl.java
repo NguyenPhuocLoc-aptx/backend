@@ -2,11 +2,14 @@ package com.npl.service;
 
 import com.npl.dto.response.NotificationResponse;
 import com.npl.model.Notification;
+import com.npl.model.User;
 import com.npl.repository.NotificationRepository;
+import com.npl.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,10 +18,10 @@ import java.util.stream.Collectors;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<NotificationResponse> getNotificationsForUser(String userId) {
-        // FIXED: Matched 'findAllBy...' from repository
         List<Notification> notifications = notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
 
         return notifications.stream()
@@ -36,12 +39,10 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found with ID: " + id));
 
-        // FIXED: Use getUser().getId() because it is a ManyToOne relationship
         if (!notification.getUser().getId().equals(userId)) {
             throw new RuntimeException("You do not have permission to modify this notification");
         }
 
-        // FIXED: Lombok generates setIsRead() for Boolean wrappers
         notification.setIsRead(true);
         notificationRepository.save(notification);
     }
@@ -49,8 +50,6 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional // Required when using custom @Modifying queries
     @Override
     public void markAllAsRead(String userId) {
-        // FIXED: Highly optimized! Instead of fetching everything and looping,
-        // this simply runs the custom SQL UPDATE query you wrote in the repository.
         notificationRepository.markAllAsRead(userId);
     }
 
@@ -59,7 +58,6 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification not found with ID: " + id));
 
-        // FIXED: Use getUser().getId()
         if (!notification.getUser().getId().equals(userId)) {
             throw new RuntimeException("You do not have permission to delete this notification");
         }
@@ -67,8 +65,23 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.delete(notification);
     }
 
-    // --- HELPER METHOD ---
+    @Override
+    public void createNotification(String userId, String entityType, String entityId, String type, String message) {
+        // 1. Fetch the user reference (getReferenceById is optimized because it avoids a DB SELECT just to set a Foreign Key)
+        User user = userRepository.getReferenceById(userId);
 
+        // 2. Create the notification object
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setMessage(message);
+        notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+
+        // 3. Save to the database
+        notificationRepository.save(notification);
+    }
+
+    // --- HELPER METHOD ---
     private NotificationResponse mapToResponse(Notification notification) {
         NotificationResponse response = new NotificationResponse();
 

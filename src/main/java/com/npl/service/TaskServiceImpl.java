@@ -132,11 +132,17 @@ public class TaskServiceImpl implements TaskService {
 		User user = userService.findUserById(userId);
 		Task task = taskRepository.findById(issueId)
 				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+
 		task.setAssignee(user);
 
-		// TODO: When you are ready to send notifications, you will need to add a "createNotification" method
-		// to your NotificationService and uncomment this.
-		// notificationService.createNotification(user.getId(), "TASK", task.getId(), "TASK_ASSIGNED", "A new task has been assigned to you.");
+
+		notificationService.createNotification(
+				user.getId(),
+				"TASK",
+				task.getId(),
+				"TASK_ASSIGNED",
+				"A new task has been assigned to you."
+		);
 
 		return taskRepository.save(task);
 	}
