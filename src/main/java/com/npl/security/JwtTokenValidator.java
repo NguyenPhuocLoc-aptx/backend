@@ -5,6 +5,8 @@ import java.util.List;
 
 import javax.crypto.SecretKey;
 
+// FIXED: Swapped deprecated Spring annotation for the JSpecify standard
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,10 +23,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * JWT filter — now a Spring @Component so AppConfig can inject it properly
- * instead of calling `new JwtTokenValidator()` manually.
- */
 @Component
 public class JwtTokenValidator extends OncePerRequestFilter {
 
@@ -33,18 +31,19 @@ public class JwtTokenValidator extends OncePerRequestFilter {
 	public JwtTokenValidator(JwtConstant jwtConstant) {
 		this.jwtConstant = jwtConstant;
 	}
+
 	@Override
-	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+	protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
 		String path = request.getRequestURI();
 		return path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs");
 	}
+
 	@Override
-	protected void doFilterInternal(HttpServletRequest request,
-									HttpServletResponse response,
-									FilterChain filterChain)
+	protected void doFilterInternal(@NonNull HttpServletRequest request,
+									@NonNull HttpServletResponse response,
+									@NonNull FilterChain filterChain)
 			throws ServletException, IOException {
 
-		// Assuming JWT_HEADER is a static constant in your JwtConstant class
 		String header = request.getHeader(JwtConstant.JWT_HEADER);
 
 		if (header != null && header.startsWith("Bearer ")) {
@@ -64,6 +63,7 @@ public class JwtTokenValidator extends OncePerRequestFilter {
 
 					String email = String.valueOf(claims.get("email"));
 					String authorities = String.valueOf(claims.get("authorities"));
+
 					List<GrantedAuthority> auths =
 							AuthorityUtils.commaSeparatedStringToAuthorityList(authorities);
 
