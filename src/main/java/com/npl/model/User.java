@@ -34,7 +34,6 @@ public class User {
 	@Column(name = "full_name", nullable = false)
 	private String fullName;
 
-	// Đã đổi tên biến thành password để tự động sinh getPassword()/setPassword()
 	@Column(name = "password_hash", nullable = false)
 	private String password;
 
@@ -42,9 +41,6 @@ public class User {
 	@Column(nullable = false, length = 50)
 	@Builder.Default
 	private UserRole role = UserRole.USER;
-
-	@Column(name = "image_url", length = 500)
-	private String imageUrl;
 
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)

@@ -34,7 +34,7 @@ public class AppConfig {
 		http
 				.sessionManagement(session -> session
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth
+				.authorizeHttpRequests(auth -> auth.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 						// Public endpoints — auth routes must be open!
 						.requestMatchers(
 								"/auth/**",

@@ -30,12 +30,8 @@ public class MessageController {
             @RequestBody CreateMessageRequest request,
             @RequestHeader("Authorization") String jwt) throws UserException, ChatException, ProjectException {
 
-        // Securely extract the sender from the JWT token
         User user = userService.findUserProfileByJwt(jwt);
 
-        // FIXED: Changed request.getProjectId() to request.getChatId()
-        // Note: Even though your MessageService interface named the parameter 'projectId',
-        // we can safely pass the 'chatId' from your request into that slot!
         Message sentMessage = messageService.sendMessage(
                 user.getId(), request.getChatId(), request.getContent());
 
