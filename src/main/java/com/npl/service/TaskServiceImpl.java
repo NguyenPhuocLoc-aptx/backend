@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.npl.enums.Priority;
 import com.npl.enums.TaskStatus;
+import com.npl.enums.TaskType;
 import com.npl.exception.TaskException;
 import com.npl.exception.ProjectException;
 import com.npl.exception.UserException;
@@ -49,40 +50,56 @@ public class TaskServiceImpl implements TaskService {
 	}
 
 	@Override
-	public Task createIssue(CreateTaskRequest issueRequest, String userId) throws UserException, ProjectException {
+	public Task createIssue(CreateTaskRequest req, String userId)
+			throws UserException, ProjectException {
+
 		User user = getUserOrThrow(userId);
-		Project project = projectService.getProjectById(issueRequest.getProjectId());
+		Project project = projectService.getProjectById(req.getProjectId());
 
 		Task task = Task.builder()
-				.title(issueRequest.getTitle())
-				.description(issueRequest.getDescription())
-				.status(parseStatus(issueRequest.getStatus()))
-				.priority(parsePriority(issueRequest.getPriority()))
-				.dueDate(issueRequest.getDueDate() != null ? issueRequest.getDueDate() : null)
+				.title(req.getTitle())
+				.description(req.getDescription())
+				.status(parseStatus(req.getStatus()))
+				.priority(parsePriority(req.getPriority()))
+				.type(parseType(req.getType()))
+				.dueDate(req.getDueDate())
 				.project(project)
 				.createdBy(user)
 				.build();
+
+		// Assign if assigneeId provided
+		if (req.getAssigneeId() != null && !req.getAssigneeId().isBlank()) {
+			try {
+				User assignee = userService.findUserById(req.getAssigneeId());
+				task.setAssignee(assignee);
+			} catch (UserException ignored) { }
+		}
 
 		return taskRepository.save(task);
 	}
 
 	@Override
-	public Optional<Task> updateIssue(String issueId, CreateTaskRequest updatedIssue, String userId)
+	public Optional<Task> updateIssue(String issueId, CreateTaskRequest req, String userId)
 			throws TaskException, UserException {
+
 		getUserOrThrow(userId);
 		Task task = taskRepository.findById(issueId)
-				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+				.orElseThrow(() -> new TaskException("Task not found: " + issueId));
 
-		if (updatedIssue.getTitle() != null)       task.setTitle(updatedIssue.getTitle());
-		if (updatedIssue.getDescription() != null) task.setDescription(updatedIssue.getDescription());
-		if (updatedIssue.getDueDate() != null)     task.setDueDate(updatedIssue.getDueDate());
-		if (updatedIssue.getPriority() != null)    task.setPriority(parsePriority(updatedIssue.getPriority()));
-		if (updatedIssue.getStatus() != null)      task.setStatus(parseStatus(updatedIssue.getStatus()));
+		if (req.getTitle()       != null) task.setTitle(req.getTitle());
+		if (req.getDescription() != null) task.setDescription(req.getDescription());
+		if (req.getDueDate()     != null) task.setDueDate(req.getDueDate());
+		if (req.getPriority()    != null) task.setPriority(parsePriority(req.getPriority()));
+		if (req.getStatus()      != null) task.setStatus(parseStatus(req.getStatus()));
+		if (req.getType()        != null) task.setType(parseType(req.getType()));
 
-		// FIXED: Changed getUserId() to getAssigneeId() to match your DTO
-		if (updatedIssue.getAssigneeId() != null) {
-			User assignee = userService.findUserById(updatedIssue.getAssigneeId());
-			task.setAssignee(assignee);
+		if (req.getAssigneeId() != null) {
+			if (req.getAssigneeId().isBlank()) {
+				task.setAssignee(null);
+			} else {
+				User assignee = userService.findUserById(req.getAssigneeId());
+				task.setAssignee(assignee);
+			}
 		}
 
 		return Optional.of(taskRepository.save(task));
@@ -92,25 +109,25 @@ public class TaskServiceImpl implements TaskService {
 	public String deleteIssue(String issueId, String userId) throws UserException, TaskException {
 		getUserOrThrow(userId);
 		taskRepository.findById(issueId)
-				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+				.orElseThrow(() -> new TaskException("Task not found: " + issueId));
 		taskRepository.deleteById(issueId);
-		return "Task with id " + issueId + " deleted";
+		return "Task " + issueId + " deleted";
 	}
 
 	@Override
 	public List<Task> getIssuesByAssigneeId(String assigneeId) throws TaskException {
 		List<Task> tasks = taskRepository.findAllByAssigneeId(assigneeId);
-		if (tasks == null || tasks.isEmpty()) throw new TaskException("No tasks found for assignee " + assigneeId);
+		if (tasks == null || tasks.isEmpty())
+			throw new TaskException("No tasks found for assignee " + assigneeId);
 		return tasks;
 	}
 
 	@Override
 	public List<Task> searchIssues(String title, String status, String priority, String assigneeId) {
-		List<Task> all = taskRepository.findAll();
-		return all.stream()
-				.filter(t -> title == null || (t.getTitle() != null && t.getTitle().contains(title)))
-				.filter(t -> status == null || t.getStatus().name().equalsIgnoreCase(status))
-				.filter(t -> priority == null || t.getPriority().name().equalsIgnoreCase(priority))
+		return taskRepository.findAll().stream()
+				.filter(t -> title      == null || (t.getTitle()    != null && t.getTitle().contains(title)))
+				.filter(t -> status     == null || t.getStatus().name().equalsIgnoreCase(status))
+				.filter(t -> priority   == null || t.getPriority().name().equalsIgnoreCase(priority))
 				.filter(t -> assigneeId == null || (t.getAssignee() != null && t.getAssignee().getId().equals(assigneeId)))
 				.collect(Collectors.toList());
 	}
@@ -118,60 +135,48 @@ public class TaskServiceImpl implements TaskService {
 	@Override
 	public List<User> getAssigneeForIssue(String issueId) throws TaskException {
 		Task task = taskRepository.findById(issueId)
-				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
-
-		User assignee = task.getAssignee();
-		if (assignee == null) {
-			return Collections.emptyList();
-		}
-		return List.of(assignee);
+				.orElseThrow(() -> new TaskException("Task not found: " + issueId));
+		return task.getAssignee() == null ? Collections.emptyList() : List.of(task.getAssignee());
 	}
 
 	@Override
 	public Task addUserToIssue(String issueId, String userId) throws UserException, TaskException {
 		User user = userService.findUserById(userId);
 		Task task = taskRepository.findById(issueId)
-				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
-
+				.orElseThrow(() -> new TaskException("Task not found: " + issueId));
 		task.setAssignee(user);
-
-
 		notificationService.createNotification(
-				user.getId(),
-				"TASK",
-				task.getId(),
-				"TASK_ASSIGNED",
-				"A new task has been assigned to you."
-		);
-
+				user.getId(), "TASK", task.getId(),
+				"TASK_ASSIGNED", "A new task has been assigned to you.");
 		return taskRepository.save(task);
 	}
 
 	@Override
 	public Task updateStatus(String issueId, String status) throws TaskException {
 		Task task = taskRepository.findById(issueId)
-				.orElseThrow(() -> new TaskException("Task not found with id " + issueId));
+				.orElseThrow(() -> new TaskException("Task not found: " + issueId));
 		task.setStatus(parseStatus(status));
 		return taskRepository.save(task);
 	}
+
+	// ── helpers ──────────────────────────────────────────────────────
 
 	private User getUserOrThrow(String userId) throws UserException {
 		return userService.findUserById(userId);
 	}
 
-	private TaskStatus parseStatus(String status) {
-		try {
-			return status != null ? TaskStatus.valueOf(status.toUpperCase()) : TaskStatus.TODO;
-		} catch (IllegalArgumentException e) {
-			return TaskStatus.TODO;
-		}
+	private TaskStatus parseStatus(String s) {
+		try { return s != null ? TaskStatus.valueOf(s.toUpperCase()) : TaskStatus.TODO; }
+		catch (IllegalArgumentException e) { return TaskStatus.TODO; }
 	}
 
-	private Priority parsePriority(String priority) {
-		try {
-			return priority != null ? Priority.valueOf(priority.toUpperCase()) : Priority.MEDIUM;
-		} catch (IllegalArgumentException e) {
-			return Priority.MEDIUM;
-		}
+	private Priority parsePriority(String p) {
+		try { return p != null ? Priority.valueOf(p.toUpperCase()) : Priority.MEDIUM; }
+		catch (IllegalArgumentException e) { return Priority.MEDIUM; }
+	}
+
+	private TaskType parseType(String t) {
+		try { return t != null ? TaskType.valueOf(t.toUpperCase()) : TaskType.TASK; }
+		catch (IllegalArgumentException e) { return TaskType.TASK; }
 	}
 }
