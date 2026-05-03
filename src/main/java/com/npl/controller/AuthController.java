@@ -1,5 +1,6 @@
 package com.npl.controller;
 
+import com.npl.enums.UserRole;
 import com.npl.security.JwtProvider;
 import com.npl.exception.UserException;
 import com.npl.model.PasswordResetToken;
@@ -56,7 +57,7 @@ public class AuthController {
 		createdUser.setEmail(email);
 		createdUser.setFullName(fullName);
 		createdUser.setPassword(passwordEncoder.encode(password));
-		createdUser.setRole(user.getRole());
+		createdUser.setRole(user.getRole() != null ? user.getRole() : UserRole.USER);
 
 		userRepository.save(createdUser);
 
@@ -132,12 +133,10 @@ public class AuthController {
 		PasswordResetToken resetToken = passwordResetTokenService.findByToken(req.getToken());
 
 		if (resetToken == null ) {
-			// Fixed grammar warning
 			throw new UserException("A token is required.");
 		}
 		if(resetToken.isExpired()) {
 			passwordResetTokenService.delete(resetToken);
-			// Fixed grammar warning
 			throw new UserException("The token has expired.");
 		}
 
