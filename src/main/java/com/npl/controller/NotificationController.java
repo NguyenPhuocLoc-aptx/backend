@@ -1,11 +1,10 @@
 package com.npl.controller;
 
 import com.npl.dto.response.NotificationResponse;
-import com.npl.model.User;
 import com.npl.service.NotificationService;
-import com.npl.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,41 +15,32 @@ import java.util.List;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<NotificationResponse>> getUserNotifications(@RequestHeader("Authorization") String jwt) 
-            throws Exception {
-        User user = userService.findUserProfileByJwt(jwt);
-        return ResponseEntity.ok(notificationService.getNotificationsForUser(user.getId()));
+    public ResponseEntity<List<NotificationResponse>> getMyNotifications(Authentication auth) throws Exception {
+        return ResponseEntity.ok(notificationService.getNotificationsForUser(auth.getName()));
     }
 
     @GetMapping("/unread-count")
-    public ResponseEntity<Long> getUnreadCount(@RequestHeader("Authorization") String jwt) throws Exception {
-        User user = userService.findUserProfileByJwt(jwt);
-        return ResponseEntity.ok(notificationService.countUnread(user.getId()));
+    public ResponseEntity<Long> getUnreadCount(Authentication auth) throws Exception {
+        return ResponseEntity.ok(notificationService.countUnread(auth.getName()));
     }
 
     @PatchMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable String id, @RequestHeader("Authorization") String jwt) 
-            throws Exception {
-        User user = userService.findUserProfileByJwt(jwt);
-        notificationService.markAsRead(id, user.getId());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> markAsRead(@PathVariable String id, Authentication auth) throws Exception {
+        notificationService.markAsRead(id, auth.getName());
+        return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/read-all")
-    public ResponseEntity<Void> markAllAsRead(@RequestHeader("Authorization") String jwt) throws Exception {
-        User user = userService.findUserProfileByJwt(jwt);
-        notificationService.markAllAsRead(user.getId());
-        return ResponseEntity.ok().build();
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(Authentication auth) throws Exception {
+        notificationService.markAllAsRead(auth.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNotification(@PathVariable String id, @RequestHeader("Authorization") String jwt) 
-            throws Exception {
-        User user = userService.findUserProfileByJwt(jwt);
-        notificationService.deleteNotification(id, user.getId());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> deleteNotification(@PathVariable String id, Authentication auth) throws Exception {
+        notificationService.deleteNotification(id, auth.getName());
+        return ResponseEntity.noContent().build();
     }
 }

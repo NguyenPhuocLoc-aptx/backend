@@ -1,7 +1,5 @@
 package com.npl.enums;
 
 public enum SubscriptionStatus {
-    ACTIVE,
-    EXPIRED,
-    CANCELLED
+    ACTIVE, EXPIRED, CANCELLED, TRIAL
 }

@@ -1,2 +1,5 @@
 package com.npl.enums;
-public enum PlanType { FREE, PREMIUM }
+
+public enum PlanType {
+    FREE, PRO, TEAM, ENTERPRISE
+}
