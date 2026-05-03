@@ -6,7 +6,6 @@ import com.npl.exception.TaskException;
 import com.npl.exception.UserException;
 import com.npl.model.Task;
 import com.npl.model.User;
-import com.npl.dto.response.ApiResponse;
 import com.npl.service.TaskService;
 import com.npl.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,83 +16,69 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/tasks")
 @RequiredArgsConstructor
 public class TaskController {
 
     private final TaskService taskService;
     private final UserService userService;
 
-    // ── GET /api/projects/{projectId}/tasks ──────────────────────────
-    @GetMapping("/api/projects/{projectId}/tasks")
-    public ResponseEntity<List<Task>> getTasksByProject(
-            @PathVariable String projectId)
-            throws ProjectException {
-
-        List<Task> tasks = taskService.getIssueByProjectId(projectId);
-        return ResponseEntity.ok(tasks);
+    @GetMapping("/{taskId}")
+    public ResponseEntity<Task> getTaskById(@PathVariable String taskId) throws TaskException {
+        return taskService.getIssueById(taskId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // ── POST /api/projects/{projectId}/tasks ─────────────────────────
-    @PostMapping("/api/projects/{projectId}/tasks")
-    public ResponseEntity<Task> createTask(
-            @PathVariable String projectId,
-            @RequestBody CreateTaskRequest request,
-            @RequestHeader("Authorization") String jwt)
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<List<Task>> getTasksByProjectId(@PathVariable String projectId) throws ProjectException {
+        return ResponseEntity.ok(taskService.getIssueByProjectId(projectId));
+    }
+
+    @PostMapping
+    public ResponseEntity<Task> createTask(@RequestBody CreateTaskRequest req, 
+                                          @RequestHeader("Authorization") String jwt) 
             throws UserException, ProjectException, TaskException {
-
         User user = userService.findUserProfileByJwt(jwt);
-        // Ensure projectId from path is used (not whatever was in the body)
-        request.setProjectId(projectId);
-        Task task = taskService.createIssue(request, user.getId());
-        return new ResponseEntity<>(task, HttpStatus.CREATED);
+        Task createdTask = taskService.createIssue(req, user.getId());
+        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
 
-    // ── GET /api/tasks/{taskId} ──────────────────────────────────────
-    @GetMapping("/api/tasks/{taskId}")
-    public ResponseEntity<Task> getTaskById(
-            @PathVariable String taskId)
-            throws TaskException {
-
-        Task task = taskService.getIssueById(taskId)
-                .orElseThrow(() -> new TaskException("Task not found: " + taskId));
-        return ResponseEntity.ok(task);
+    @PutMapping("/{taskId}")
+    public ResponseEntity<Task> updateTask(@PathVariable String taskId, 
+                                          @RequestBody CreateTaskRequest req,
+                                          @RequestHeader("Authorization") String jwt) 
+            throws TaskException, UserException, ProjectException {
+        User user = userService.findUserProfileByJwt(jwt);
+        return taskService.updateIssue(taskId, req, user.getId())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // ── PUT /api/tasks/{taskId} ──────────────────────────────────────
-    @PutMapping("/api/tasks/{taskId}")
-    public ResponseEntity<Task> updateTask(
-            @PathVariable String taskId,
-            @RequestBody CreateTaskRequest request,
-            @RequestHeader("Authorization") String jwt)
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<String> deleteTask(@PathVariable String taskId, 
+                                            @RequestHeader("Authorization") String jwt) 
+            throws UserException, TaskException {
+        User user = userService.findUserProfileByJwt(jwt);
+        return ResponseEntity.ok(taskService.deleteIssue(taskId, user.getId()));
+    }
+
+    @GetMapping("/my-tasks")
+    public ResponseEntity<List<Task>> getMyTasks(@RequestHeader("Authorization") String jwt) 
             throws UserException, TaskException, ProjectException {
-
         User user = userService.findUserProfileByJwt(jwt);
-        Task updated = taskService.updateIssue(taskId, request, user.getId())
-                .orElseThrow(() -> new TaskException("Task not found: " + taskId));
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(taskService.getIssuesByAssigneeId(user.getId()));
     }
 
-    // ── DELETE /api/tasks/{taskId} ───────────────────────────────────
-    @DeleteMapping("/api/tasks/{taskId}")
-    public ResponseEntity<ApiResponse> deleteTask(
-            @PathVariable String taskId,
-            @RequestHeader("Authorization") String jwt)
-            throws UserException, TaskException, ProjectException {
-
-        User user = userService.findUserProfileByJwt(jwt);
-        String result = taskService.deleteIssue(taskId, user.getId());
-        return ResponseEntity.ok(new ApiResponse(result, true));
-    }
-
-    // ── PATCH /api/tasks/{taskId}/status ────────────────────────────
-    @PatchMapping("/api/tasks/{taskId}/status")
-    public ResponseEntity<Task> updateTaskStatus(
-            @PathVariable String taskId,
-            @RequestBody java.util.Map<String, String> body)
+    @PatchMapping("/{taskId}/status/{status}")
+    public ResponseEntity<Task> updateTaskStatus(@PathVariable String taskId, @PathVariable String status) 
             throws TaskException {
+        return ResponseEntity.ok(taskService.updateStatus(taskId, status));
+    }
 
-        String status = body.get("status");
-        Task updated = taskService.updateStatus(taskId, status);
-        return ResponseEntity.ok(updated);
+    @PostMapping("/{taskId}/assign/{userId}")
+    public ResponseEntity<Task> assignUserToTask(@PathVariable String taskId, @PathVariable String userId) 
+            throws UserException, TaskException {
+        return ResponseEntity.ok(taskService.addUserToIssue(taskId, userId));
     }
 }

@@ -1,5 +1,2 @@
 package com.npl.enums;
-
-public enum ChatType {
-    GROUP, DIRECT
-}
+public enum ChatType { GROUP, DIRECT }

@@ -3,41 +3,19 @@ package com.npl.model;
 import com.npl.enums.ProjectRole;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "project_members", indexes = {
-        @Index(name = "idx_pm_user", columnList = "user_id"),
-        @Index(name = "uk_pm_project_user", columnList = "project_id,user_id", unique = true)
-})
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
 public class ProjectMember {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(length = 36)
+    @Id @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
+    
+    @ManyToOne
     private Project project;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    
+    @ManyToOne
     private User user;
-
+    
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    @Builder.Default
-    private ProjectRole role = ProjectRole.MEMBER;
-
-    @CreationTimestamp
-    @Column(name = "joined_at", nullable = false, updatable = false)
-    private LocalDateTime joinedAt;
+    private ProjectRole role;
 }
